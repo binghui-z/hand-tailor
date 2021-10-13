@@ -125,11 +125,32 @@ float HandTailor::obtain_error(const cv::Vec<float, 48>& so3, const cv::Vec<floa
     return error;
 }
 
+void HandTailor::convertJointsandVerts(
+    Eigen::MatrixXf& Joints3D,
+    Eigen::MatrixXf& Mesh_verts,
+    const Eigen::MatrixXf& jonts16,
+    const Eigen::MatrixXf& verts778)
+{
+    std::vector<int> jtip_ind{ 745, 317, 444, 556, 673 };
+    Eigen::MatrixXf jtip_pts = verts778(Eigen::all, jtip_ind);
+
+    Eigen::MatrixXf jt_pts = Eigen::MatrixXf::Zero(3, jonts16.cols() + jtip_pts.cols());
+    jt_pts << jonts16, jtip_pts;
+
+    MatrixXf joint_tmp = MatrixXf::Zero(3, 21);;
+    std::vector<int> color_order{ 0,13,14,15,16, 1,2,3,17, 4,5,6,18, 10,11,12,19, 7,8,9,20 }; // with tip_pts
+    for (int i = 0; i < color_order.size(); i++) {
+        joint_tmp.col(i) = jt_pts.col(color_order[i]);
+    }
+
+    Joints3D = joint_tmp.colwise() - joint_tmp.col(9);
+    Mesh_verts = verts778.colwise() - joint_tmp.col(9);
+}
 void HandTailor::get_param(
     std::vector<cv::Point2f>& coords, 
     cv::Vec<float, 48>& so3_vec,
     cv::Vec<float, 10>& beta_vec,
-    cv::Mat& joint_root,
+    cv::Vec<float, 3>& joint_root_vec,
     cv::Mat& bone,
     cv::Mat inputImage)
 {
@@ -165,7 +186,8 @@ void HandTailor::get_param(
     for (int i = 0; i < 1; i++) {
         memcpy(&so3_vec, ptr_output[1], 192);   //pt ptr_output[1],onnx ptr_output[3]
         memcpy(&beta_vec, ptr_output[2],40);    //pt ptr_output[2],onnx ptr_output[1]
-        joint_root = cv::Mat(3, 1, CV_32FC1, ptr_output[3] + i * 3 * 1); //pt ptr_output[3],onnx ptr_output[2]
+        memcpy(&joint_root_vec, ptr_output[3], 12);
+        //joint_root = cv::Mat(3, 1, CV_32FC1, ptr_output[3] + i * 3 * 1); //pt ptr_output[3],onnx ptr_output[2]
         bone = cv::Mat(1, 1, CV_32FC1, ptr_output[4] + i * 1 * 1); //pt ptr_output[4],onnx ptr_output[4]
 
         so3_init = so3_vec;

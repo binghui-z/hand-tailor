@@ -65,7 +65,7 @@ public:
 		std::vector<cv::Point2f>& coords,
 		cv::Vec<float, 48>& so3_vec,
 		cv::Vec<float, 10>& beta,
-		cv::Mat& joint_root,
+		cv::Vec<float, 3>& joint_root_vec,
 		cv::Mat& bone,
 		cv::Mat inputImage);
 
@@ -98,6 +98,18 @@ public:
 		const cv::Point2f& t, 
 		float scale);
 
+	// \brief convert the MANO results to aligen with the python
+	//
+	// \param Joints3D [out] the result after processing the MANO result ,and the number of the 3D joints convert to 21
+	// \param Mesh_verts [out] the result after processing the MANO result of mesh verts
+	// \param joints16 [in] MANO output ,represent the 3D joints
+	// \param verts778 [in] MANO output ,represent the mesh verts
+	void convertJointsandVerts(
+		Eigen::MatrixXf& Joints3D ,
+		Eigen::MatrixXf& Mesh_verts,
+		const Eigen::MatrixXf& jonts16, 
+		const Eigen::MatrixXf& verts778);
+
 	// \brief draw the skeleton and 2d joints on the original
 	//
 	// \param inputImage [in] the original image
@@ -119,7 +131,6 @@ private:
 	//
 	// \return return the loss between the input 3D joints coords
 	float obtain_loss(const Eigen::MatrixXf& joints_3D);
-
 
 public:
 	cv::Vec<float, 48> so3_init;
